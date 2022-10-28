@@ -1,5 +1,25 @@
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.20.0"
+  }
+}
+
+allprojects {
+    repositories {
+        maven {
+            url "http://35.92.201.109:8081/artifactory/gradle-dev/"
+        }
+    }
+}
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 mainClassName = 'org.oneframework.runner.TestRunner'
 
@@ -30,5 +50,38 @@ jar {
 
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+publishing {
+    publications {
+    mavenJava(MavenPublication) {
+    from components.java
+        }
+    }
+}
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = 'gradle-dev-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+            
+        }
+        defaults {
+            publications('mavenJava')
+            publishArtifacts = true
+            publishPom = true
+        }
+    }
+    resolve {
+        repository {
+            repoKey = 'gradle-dev'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+            
+        }
     }
 }
